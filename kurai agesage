@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>位が動くアプリ（最終完成版）</title>
+
+<style>
+body { text-align:center; }
+
+table {
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+
+th, td {
+  border: 1px solid #444;
+  width: 45px;
+  height: 38px;
+  text-align: center;
+  font-size: 18px;
+  position: relative;
+}
+
+th:nth-child(4n), td:nth-child(4n) {
+  border-right: 3px solid black;
+}
+
+/* 啓林館4年カラー */
+.cho { background:#f7c59f; text-align:right; padding-right:6px; }
+.oku { background:#cfe2f3; text-align:right; padding-right:6px; }
+.man { background:#fff2cc; text-align:right; padding-right:6px; }
+.one { background:#f4cccc; }
+
+button, input {
+  font-size:16px;
+  margin:5px;
+}
+
+.num {
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-size:24px;
+}
+
+.gray { color:#aaa; }
+</style>
+</head>
+
+<body>
+
+<h2>位が動くアプリ</h2>
+
+<input id="numInput" placeholder="数字を入力">
+<button onclick="setNumber()">セット</button>
+<button onclick="reset()">元にもどす</button>
+<button onclick="clearAll()">クリア</button>
+<br>
+<button onclick="multiply(1)">10倍</button>
+<button onclick="multiply(2)">100倍</button>
+<button onclick="divide(1)">10でわる</button>
+<button onclick="divide(2)">100でわる</button>
+
+<br><br>
+
+<table id="table">
+  <tr>
+    <th>千</th><th>百</th><th>十</th><th>一</th>
+    <th>千</th><th>百</th><th>十</th><th>一</th>
+    <th>千</th><th>百</th><th>十</th><th>一</th>
+    <th>千</th><th>百</th><th>十</th><th>一</th>
+  </tr>
+  <tr>
+    <th colspan="4" class="cho">兆</th>
+    <th colspan="4" class="oku">億</th>
+    <th colspan="4" class="man">万</th>
+    <th colspan="4" class="one"></th>
+  </tr>
+</table>
+
+<script>
+const COLS = 16;
+const ROWS = 7;
+const BASE_ROW = 3;
+
+let currentValue = "";
+let baseValue = "";
+let rowOffset = 0;
+
+const table = document.getElementById("table");
+
+/* 行を作る */
+for (let r = 0; r < ROWS; r++) {
+  const tr = document.createElement("tr");
+  for (let c = 0; c < COLS; c++) tr.appendChild(document.createElement("td"));
+  table.appendChild(tr);
+}
+
+/* 全角→半角 */
+function toHalfWidth(str) {
+  return str.replace(/[０-９]/g, s =>
+    String.fromCharCode(s.charCodeAt(0) - 0xFEE0)
+  );
+}
+
+/* 描画 */
+function draw() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      table.rows[r+2].cells[c].innerHTML = "";
+    }
+  }
+  if (!currentValue) return;
+
+  const digits = currentValue.split("");
+  const startCol = COLS - digits.length;
+
+  /* 元の数（灰色） */
+  baseValue.split("").forEach((d,i)=>{
+    const el = document.createElement("div");
+    el.className = "num gray";
+    el.textContent = d;
+    table.rows[BASE_ROW+2].cells[COLS-baseValue.length+i].appendChild(el);
+  });
+
+  /* 現在の数（黒） */
+  digits.forEach((d,i)=>{
+    const el = document.createElement("div");
+    el.className = "num";
+    el.textContent = d;
+    const r = BASE_ROW + rowOffset;
+    if (r >= 0 && r < ROWS) {
+      table.rows[r+2].cells[startCol+i].appendChild(el);
+    }
+  });
+}
+
+/* セット */
+function setNumber() {
+  let v = toHalfWidth(numInput.value);
+  if (!/^\d+$/.test(v)) return;
+  currentValue = v;
+  baseValue = v;
+  rowOffset = 0;
+  draw();
+}
+
+/* 倍 */
+function multiply(step) {
+  if (!currentValue) return;
+  currentValue += "0".repeat(step);
+  rowOffset += step;
+  draw();
+}
+
+/* 割る */
+function divide(step) {
+  if (!currentValue) return;
+  if (currentValue.length <= step) {
+    currentValue = "0";
+  } else {
+    currentValue = currentValue.slice(0, -step);
+  }
+  rowOffset -= step;
+  draw();
+}
+
+/* 元にもどす */
+function reset() {
+  currentValue = baseValue;
+  rowOffset = 0;
+  draw();
+}
+
+/* クリア */
+function clearAll() {
+  currentValue = "";
+  baseValue = "";
+  rowOffset = 0;
+  draw();
+}
+</script>
+
+</body>
+</html>
